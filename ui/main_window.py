@@ -22,6 +22,7 @@ from core.data_buffer import DataManager
 from core.performance_analyzer import PerformanceAnalyzer
 from core.simulator_receiver import SimulatorReceiver
 from core.unified_data_protocol import UnifiedData, HandshakeInfo, StateValue
+from core.updater import AutoUpdater, get_current_version
 
 
 class DataSourceMode:
@@ -64,7 +65,13 @@ class MainWindow(QMainWindow):
         
         # 初始化串口列表
         self._control_panel.serial_panel.refresh_ports()
-    
+
+        # 初始化自动更新器
+        self._updater = AutoUpdater(self)
+
+        # 启动时静默检查更新
+        QTimer.singleShot(2000, lambda: self._updater.check_for_updates(silent=True))
+
     def _setup_ui(self):
         """设置用户界面"""
         self.setWindowTitle("控制系统实时分析工具 v2.0")
@@ -205,6 +212,12 @@ class MainWindow(QMainWindow):
         
         # 帮助菜单
         help_menu = menubar.addMenu("帮助(&H)")
+
+        update_action = QAction("检查更新(&U)", self)
+        update_action.triggered.connect(self._check_for_updates)
+        help_menu.addAction(update_action)
+        help_menu.addSeparator()
+
         about_action = QAction("关于(&A)", self)
         about_action.triggered.connect(self._show_about)
         help_menu.addAction(about_action)
@@ -580,12 +593,13 @@ class MainWindow(QMainWindow):
     
     def _show_about(self):
         """显示关于"""
+        version = get_current_version()
         msg = QMessageBox(self)
         msg.setWindowTitle("关于")
         msg.setTextFormat(Qt.TextFormat.RichText)
         msg.setText(
-            "<div style='color: #000000;'>"
-            "<h3 style='color: #1565C0;'>控制系统实时分析工具 v2.0</h3>"
+            f"<div style='color: #000000;'>"
+            f"<h3 style='color: #1565C0;'>控制系统实时分析工具 v{version}</h3>"
             "<p>统一架构版本 - 串口和仿真共用核心组件</p>"
             "<h4 style='color: #2E7D32;'>数据源:</h4>"
             "<ul>"
@@ -599,6 +613,7 @@ class MainWindow(QMainWindow):
             "<li>FFT频谱分析</li>"
             "<li>性能指标计算</li>"
             "</ul>"
+            "<p style='color: #666;'>GitHub: ktkuri132/Control_System_Box</p>"
             "</div>"
         )
         msg.setStyleSheet("QMessageBox { background-color: #FFFFFF; } QLabel { color: #000000; }")
@@ -628,6 +643,10 @@ class MainWindow(QMainWindow):
         )
         msg.setStyleSheet("QMessageBox { background-color: #FFFFFF; } QLabel { color: #000000; }")
         msg.exec()
+
+    def _check_for_updates(self):
+        """手动检查更新"""
+        self._updater.check_for_updates(silent=False)
 
     def closeEvent(self, event):
         """窗口关闭"""

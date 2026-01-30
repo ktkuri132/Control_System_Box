@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import (QMessageBox, QProgressDialog, QApplication)
 
 # 配置
 GITHUB_REPO = "ktkuri132/Control_System_Box"
-CURRENT_VERSION = "2.0.0"
+CURRENT_VERSION = "2.0.1"
 UPDATE_CHECK_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 
 

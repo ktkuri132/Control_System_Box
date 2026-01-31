@@ -1,0 +1,989 @@
+{
+  "$schema": "Control_System_Box UI Configuration",
+  "version": "2.1.2",
+  "description": "控制系统实时分析工具界面配置文件 - 用于 C++ Qt 重构参考",
+  "generated_at": "2026-01-31",
+
+  "application": {
+    "name": "控制系统实时分析工具",
+    "organization": "ControlSystemBox",
+    "style": "Fusion",
+    "icon_path": "img/icon.ico",
+    "splash_path": "img/strat.jpg",
+    "splash_size": {"width": 600, "height": 400},
+    "min_size": {"width": 1200, "height": 700},
+    "default_size": {"width": 1400, "height": 800},
+    "high_dpi_enabled": true
+  },
+
+  "theme": {
+    "type": "dark",
+    "colors": {
+      "background": "#1E1E1E",
+      "surface": "#252526",
+      "surface_variant": "#2D2D30",
+      "border": "#3D3D3D",
+      "border_light": "#555555",
+      "text_primary": "#CCCCCC",
+      "text_secondary": "#AAAAAA",
+      "text_disabled": "#888888",
+      "text_white": "#FFFFFF",
+      "accent_blue": "#0078D4",
+      "accent_blue_hover": "#1177BB",
+      "accent_blue_pressed": "#094771",
+      "accent_blue_light": "#4FC3F7",
+      "accent_green": "#4CAF50",
+      "accent_green_dark": "#388E3C",
+      "accent_green_light": "#81C784",
+      "accent_red": "#FF6B6B",
+      "accent_red_dark": "#D32F2F",
+      "accent_orange": "#FF9800",
+      "accent_yellow": "#FFE66D",
+      "accent_cyan": "#4ECDC4",
+      "accent_purple": "#DDA0DD",
+      "status_bar": "#007ACC"
+    },
+    "fonts": {
+      "primary": "Microsoft YaHei",
+      "fallback": ["Segoe UI", "sans-serif"],
+      "monospace": "Consolas"
+    }
+  },
+
+  "main_window": {
+    "title": "控制系统实时分析工具 v2.1.2",
+    "layout": {
+      "type": "vertical",
+      "margins": [0, 0, 0, 0],
+      "spacing": 0,
+      "children": ["mode_toolbar", "content_area", "status_bar"]
+    }
+  },
+
+  "components": {
+    "mode_toolbar": {
+      "type": "frame",
+      "fixed_height": 45,
+      "style": {
+        "background": "#2D2D30",
+        "border_bottom": "1px solid #3D3D3D"
+      },
+      "layout": {
+        "type": "horizontal",
+        "margins": [10, 5, 10, 5],
+        "spacing": 5
+      },
+      "children": {
+        "title_label": {
+          "type": "label",
+          "text": "数据源:",
+          "style": {"color": "#AAAAAA", "font_size": 12}
+        },
+        "serial_mode_btn": {
+          "type": "radio_button",
+          "text": "🔌 串口",
+          "checked": true,
+          "group_id": "mode_group",
+          "value": 0,
+          "style": {
+            "normal": {"background": "#3C3C3C", "border_radius": 3, "padding": "6px 12px"},
+            "hover": {"background": "#4C4C4C"},
+            "checked": {"background": "#0E639C", "border": "2px solid #4FC3F7"}
+          }
+        },
+        "simulator_mode_btn": {
+          "type": "radio_button",
+          "text": "📡 UDP仿真",
+          "checked": false,
+          "group_id": "mode_group",
+          "value": 1,
+          "style": {
+            "normal": {"background": "#3C3C3C", "border_radius": 3, "padding": "6px 12px"},
+            "hover": {"background": "#4C4C4C"},
+            "checked": {"background": "#388E3C", "border": "2px solid #81C784"}
+          }
+        },
+        "mode_indicator": {
+          "type": "label",
+          "text": "当前: 串口模式",
+          "style": {"color": "#4FC3F7", "font_size": 11}
+        }
+      }
+    },
+
+    "content_area": {
+      "type": "horizontal_layout",
+      "margins": [5, 5, 5, 5],
+      "spacing": 5,
+      "children": {
+        "control_panel": {
+          "ref": "unified_control_panel"
+        },
+        "plot_area": {
+          "ref": "simulator_plot_widget",
+          "stretch": 1
+        }
+      }
+    },
+
+    "unified_control_panel": {
+      "type": "scroll_area",
+      "fixed_width": 280,
+      "horizontal_scrollbar": "always_off",
+      "style": {"background": "#1E1E1E"},
+      "children": {
+        "connection_stack": {
+          "type": "stacked_widget",
+          "pages": ["serial_config_panel", "simulator_config_panel"]
+        },
+        "setpoint_panel": {"ref": "setpoint_panel"},
+        "pid_panel": {"ref": "pid_control_panel"},
+        "metrics_panel": {"ref": "unified_metrics_panel"},
+        "data_panel": {"ref": "data_control_panel"},
+        "filter_panel": {"ref": "filter_control_panel"}
+      }
+    },
+
+    "serial_config_panel": {
+      "type": "group_box",
+      "title": "串口配置",
+      "layout": {"type": "grid", "spacing": 8},
+      "children": {
+        "port_label": {"type": "label", "text": "端口:", "row": 0, "col": 0},
+        "port_combo": {
+          "type": "combo_box",
+          "min_width": 120,
+          "row": 0, "col": 1
+        },
+        "refresh_btn": {
+          "type": "button",
+          "text": "🔄",
+          "fixed_width": 30,
+          "tooltip": "刷新串口列表",
+          "row": 0, "col": 2
+        },
+        "baudrate_label": {"type": "label", "text": "波特率:", "row": 1, "col": 0},
+        "baudrate_combo": {
+          "type": "combo_box",
+          "items": ["9600", "19200", "38400", "57600", "115200", "230400", "460800", "921600"],
+          "default": "115200",
+          "row": 1, "col": 1, "colspan": 2
+        },
+        "connect_btn": {
+          "type": "button",
+          "text": "连接",
+          "row": 2, "col": 0, "colspan": 3,
+          "style": {
+            "normal": {"background": "#0E639C", "color": "white", "font_weight": "bold", "padding": 8},
+            "hover": {"background": "#1177BB"},
+            "pressed": {"background": "#094771"}
+          }
+        },
+        "status_label": {
+          "type": "label",
+          "text": "● 未连接",
+          "row": 3, "col": 0, "colspan": 3,
+          "style": {"color": "#FF6B6B"}
+        }
+      },
+      "signals": {
+        "connect_requested": ["port: string", "baudrate: int"],
+        "disconnect_requested": []
+      }
+    },
+
+    "simulator_config_panel": {
+      "type": "group_box",
+      "title": "仿真数据接收 (UDP)",
+      "layout": {"type": "grid", "spacing": 8},
+      "children": {
+        "host_label": {"type": "label", "text": "IP地址:", "row": 0, "col": 0},
+        "host_edit": {
+          "type": "line_edit",
+          "text": "127.0.0.1",
+          "placeholder": "127.0.0.1",
+          "row": 0, "col": 1, "colspan": 2
+        },
+        "port_label": {"type": "label", "text": "端口:", "row": 1, "col": 0},
+        "port_spin": {
+          "type": "spin_box",
+          "min": 1024, "max": 65535, "value": 5555,
+          "row": 1, "col": 1, "colspan": 2
+        },
+        "connect_btn": {
+          "type": "button",
+          "text": "开始监听",
+          "row": 2, "col": 0, "colspan": 3,
+          "style": {
+            "normal": {"background": "#0E639C", "color": "white", "font_weight": "bold", "padding": 8},
+            "hover": {"background": "#1177BB"}
+          }
+        },
+        "status_label": {
+          "type": "label",
+          "text": "● 未连接",
+          "row": 3, "col": 0, "colspan": 3,
+          "style": {"color": "#FF6B6B"}
+        },
+        "system_label": {
+          "type": "label",
+          "text": "系统类型: --",
+          "row": 4, "col": 0, "colspan": 3,
+          "style": {"color": "#888888", "font_size": 10}
+        }
+      },
+      "signals": {
+        "connect_requested": ["host: string", "port: int"],
+        "disconnect_requested": []
+      }
+    },
+
+    "setpoint_panel": {
+      "type": "group_box",
+      "title": "设定值 (Setpoint)",
+      "layout": {"type": "vertical", "spacing": 8},
+      "children": {
+        "sp_slider": {
+          "ref": "slider_with_label",
+          "label": "SP",
+          "min": 0.0, "max": 100.0, "default": 50.0, "decimals": 1
+        },
+        "send_btn": {
+          "type": "button",
+          "text": "发送设定值",
+          "style": {
+            "normal": {"background": "#1976D2", "color": "white", "padding": 6},
+            "hover": {"background": "#1E88E5"}
+          }
+        }
+      },
+      "signals": {
+        "setpoint_changed": ["value: float"],
+        "send_requested": ["value: float"]
+      }
+    },
+
+    "pid_control_panel": {
+      "type": "group_box",
+      "title": "PID 参数调节",
+      "layout": {"type": "vertical", "spacing": 10},
+      "children": {
+        "dials_row": {
+          "type": "horizontal_layout",
+          "spacing": 5,
+          "children": {
+            "kp_dial": {"ref": "dial_with_label", "label": "Kp", "min": 0.0, "max": 100.0, "default": 1.0, "decimals": 2},
+            "ki_dial": {"ref": "dial_with_label", "label": "Ki", "min": 0.0, "max": 10.0, "default": 0.0, "decimals": 3},
+            "kd_dial": {"ref": "dial_with_label", "label": "Kd", "min": 0.0, "max": 10.0, "default": 0.0, "decimals": 3}
+          }
+        },
+        "separator": {"type": "horizontal_line", "style": {"background": "#3D3D3D"}},
+        "realtime_check": {
+          "type": "checkbox",
+          "text": "实时发送",
+          "checked": false
+        },
+        "send_btn": {
+          "type": "button",
+          "text": "发送 PID 参数",
+          "style": {
+            "normal": {"background": "#388E3C", "color": "white", "font_weight": "bold", "padding": 10},
+            "hover": {"background": "#43A047"},
+            "pressed": {"background": "#2E7D32"}
+          }
+        },
+        "params_label": {
+          "type": "label",
+          "text": "Kp=1.00, Ki=0.000, Kd=0.000",
+          "alignment": "center",
+          "style": {"color": "#888888", "font_size": 10}
+        }
+      },
+      "signals": {
+        "pid_changed": ["kp: float", "ki: float", "kd: float"],
+        "send_requested": ["kp: float", "ki: float", "kd: float"]
+      }
+    },
+
+    "dial_with_label": {
+      "type": "custom_widget",
+      "class_name": "DialWithLabel",
+      "layout": {"type": "vertical", "margins": [5, 5, 5, 5], "spacing": 2},
+      "children": {
+        "label": {
+          "type": "label",
+          "alignment": "center",
+          "style": {"color": "#CCCCCC", "font_weight": "bold"}
+        },
+        "dial": {
+          "type": "dial",
+          "fixed_size": {"width": 70, "height": 70},
+          "notches_visible": true,
+          "wrapping": false,
+          "style": {"background": "#3C3C3C"}
+        },
+        "spinbox": {
+          "type": "double_spin_box",
+          "style": {
+            "background": "#3C3C3C",
+            "color": "#FFFFFF",
+            "border": "1px solid #555555",
+            "border_radius": 3,
+            "padding": 2
+          }
+        }
+      },
+      "signals": {"valueChanged": ["value: float"]}
+    },
+
+    "slider_with_label": {
+      "type": "custom_widget",
+      "class_name": "SliderWithLabel",
+      "layout": {"type": "horizontal", "margins": [5, 2, 5, 2], "spacing": 5},
+      "children": {
+        "label": {
+          "type": "label",
+          "fixed_width": 30,
+          "style": {"color": "#CCCCCC", "font_weight": "bold"}
+        },
+        "slider": {
+          "type": "slider",
+          "orientation": "horizontal",
+          "stretch": 1,
+          "style": {
+            "groove": {"border": "1px solid #555555", "height": 6, "background": "#3C3C3C", "border_radius": 3},
+            "handle": {"background": "#0078D4", "border": "1px solid #005A9E", "width": 14, "margin": "-5px 0", "border_radius": 7},
+            "handle_hover": {"background": "#1C86E5"}
+          }
+        },
+        "spinbox": {
+          "type": "double_spin_box",
+          "fixed_width": 80
+        }
+      },
+      "signals": {"valueChanged": ["value: float"]}
+    },
+
+    "unified_metrics_panel": {
+      "type": "group_box",
+      "title": "性能指标",
+      "layout": {"type": "vertical", "spacing": 5},
+      "children": {
+        "metrics_stack": {
+          "type": "stacked_widget",
+          "pages": ["serial_metrics", "pendulum_metrics", "ball_metrics"]
+        }
+      },
+      "metrics_definitions": {
+        "serial": [
+          {"key": "rise_time", "name": "上升时间", "unit": "s"},
+          {"key": "settling_time", "name": "调节时间", "unit": "s"},
+          {"key": "overshoot", "name": "超调量", "unit": "%"},
+          {"key": "peak_time", "name": "峰值时间", "unit": "s"},
+          {"key": "steady_state_error", "name": "稳态误差", "unit": ""},
+          {"key": "oscillation_count", "name": "振荡次数", "unit": ""},
+          {"key": "rms_error", "name": "RMS误差", "unit": ""},
+          {"key": "iae", "name": "IAE", "unit": ""}
+        ],
+        "pendulum": [
+          {"key": "angle", "name": "当前角度", "unit": "°"},
+          {"key": "cart_pos", "name": "小车位置", "unit": "m"},
+          {"key": "force", "name": "控制力", "unit": "N"},
+          {"key": "max_angle", "name": "最大偏角", "unit": "°"},
+          {"key": "angular_vel", "name": "角速度", "unit": "°/s"},
+          {"key": "settling", "name": "稳定性", "unit": ""}
+        ],
+        "ball": [
+          {"key": "error", "name": "位置误差", "unit": "mm"},
+          {"key": "ball_pos", "name": "小球位置", "unit": ""},
+          {"key": "plate_angle", "name": "平板角度", "unit": "°"},
+          {"key": "max_error", "name": "最大误差", "unit": "mm"},
+          {"key": "track_error", "name": "跟踪误差", "unit": "mm"},
+          {"key": "settling", "name": "稳定性", "unit": ""}
+        ]
+      }
+    },
+
+    "data_control_panel": {
+      "type": "group_box",
+      "title": "数据控制",
+      "layout": {"type": "vertical", "spacing": 5},
+      "children": {
+        "count_label": {
+          "type": "label",
+          "text": "数据点数: 0",
+          "style": {"color": "#AAAAAA"}
+        },
+        "btn_row": {
+          "type": "horizontal_layout",
+          "children": {
+            "pause_btn": {
+              "type": "button",
+              "text": "暂停",
+              "style": {
+                "normal": {"background": "#FF9800", "color": "white", "padding": 6},
+                "hover": {"background": "#FFA726"}
+              }
+            },
+            "clear_btn": {
+              "type": "button",
+              "text": "清空",
+              "style": {
+                "normal": {"background": "#F44336", "color": "white", "padding": 6},
+                "hover": {"background": "#EF5350"}
+              }
+            }
+          }
+        },
+        "export_btn": {
+          "type": "button",
+          "text": "导出数据 (CSV)",
+          "style": {
+            "normal": {"background": "#455A64", "color": "white", "padding": 6},
+            "hover": {"background": "#546E7A"}
+          }
+        }
+      },
+      "signals": {
+        "clear_requested": [],
+        "pause_requested": ["paused: bool"],
+        "export_requested": []
+      }
+    },
+
+    "filter_control_panel": {
+      "type": "widget",
+      "layout": {"type": "vertical", "margins": [5, 5, 5, 5], "spacing": 5},
+      "children": {
+        "filter_group": {
+          "type": "group_box",
+          "title": "信号滤波",
+          "title_style": {"color": "#4FC3F7"},
+          "children": {
+            "enable_check": {"type": "checkbox", "text": "启用滤波"},
+            "algo_row": {
+              "type": "horizontal_layout",
+              "children": {
+                "algo_label": {"type": "label", "text": "算法:", "style": {"color": "#AAAAAA"}},
+                "algo_combo": {
+                  "type": "combo_box",
+                  "items": ["移动平均", "指数平滑", "低通滤波", "中值滤波", "卡尔曼滤波", "融合滤波"],
+                  "stretch": 1
+                }
+              }
+            },
+            "strength_row": {
+              "type": "horizontal_layout",
+              "children": {
+                "strength_label": {"type": "label", "text": "强度:", "style": {"color": "#AAAAAA"}},
+                "strength_slider": {
+                  "type": "slider",
+                  "orientation": "horizontal",
+                  "min": 1, "max": 10, "value": 5,
+                  "stretch": 1,
+                  "style": {
+                    "groove": {"height": 6, "background": "#3C3C3C", "border_radius": 3},
+                    "handle": {"width": 16, "margin": "-5px 0", "background": "#0078D4", "border_radius": 8},
+                    "sub_page": {"background": "#0078D4", "border_radius": 3}
+                  }
+                },
+                "strength_value": {"type": "label", "text": "5", "style": {"color": "#4FC3F7", "min_width": 20}}
+              }
+            },
+            "algo_desc": {
+              "type": "label",
+              "text": "移动平均: 平滑噪声，响应较慢",
+              "word_wrap": true,
+              "style": {"color": "#888888", "font_size": 10}
+            }
+          }
+        },
+        "harmonic_group": {
+          "type": "group_box",
+          "title": "谐波分析",
+          "title_style": {"color": "#81C784"},
+          "children": {
+            "thd_row": {
+              "type": "horizontal_layout",
+              "children": {
+                "thd_label": {"type": "label", "text": "总谐波失真(THD):", "style": {"color": "#AAAAAA"}},
+                "thd_value": {"type": "label", "text": "--", "style": {"color": "#FF9800", "font_weight": "bold"}}
+              }
+            },
+            "fund_row": {
+              "type": "horizontal_layout",
+              "children": {
+                "fund_label": {"type": "label", "text": "基频:", "style": {"color": "#AAAAAA"}},
+                "fund_value": {"type": "label", "text": "--", "style": {"color": "#4FC3F7"}}
+              }
+            },
+            "harmonic_table": {
+              "type": "table_widget",
+              "columns": ["次数", "频率", "幅值", "相位"],
+              "max_height": 120,
+              "resize_mode": "stretch",
+              "style": {
+                "background": "#2D2D30",
+                "color": "#CCCCCC",
+                "border": "1px solid #3D3D3D",
+                "gridline_color": "#3D3D3D",
+                "header": {"background": "#3C3C3C", "color": "#FFFFFF", "padding": 4}
+              }
+            }
+          }
+        }
+      },
+      "signals": {"filter_changed": []}
+    },
+
+    "simulator_plot_widget": {
+      "type": "widget",
+      "layout": {"type": "vertical", "margins": [5, 5, 5, 5], "spacing": 5},
+      "children": {
+        "state_selector_frame": {
+          "type": "frame",
+          "style": {
+            "background": "#2D2D30",
+            "border": "1px solid #3C3C3C",
+            "border_radius": 5,
+            "padding": 5
+          },
+          "layout": {"type": "horizontal", "margins": [10, 5, 10, 5], "spacing": 10},
+          "children": {
+            "state_label": {
+              "type": "label",
+              "text": "📊 观察状态:",
+              "style": {"color": "#FFFFFF", "font_weight": "bold", "border": "none"}
+            },
+            "state_combo": {
+              "type": "combo_box",
+              "min_width": 200,
+              "default_item": "等待握手帧...",
+              "enabled": false
+            },
+            "state_info_label": {
+              "type": "label",
+              "text": "",
+              "style": {"color": "#888888", "font_size": 11, "border": "none"}
+            },
+            "system_label": {
+              "type": "label",
+              "text": "系统: --",
+              "alignment": "right",
+              "style": {"color": "#4FC3F7", "font_size": 11, "border": "none"}
+            }
+          }
+        },
+        "standard_response_widget": {"ref": "standard_response_widget", "stretch": 1}
+      },
+      "signals": {"state_selection_changed": ["index: int"]}
+    },
+
+    "standard_response_widget": {
+      "type": "widget",
+      "layout": {"type": "vertical", "margins": [5, 5, 5, 5], "spacing": 5},
+      "children": {
+        "response_plot": {
+          "ref": "realtime_plot_widget",
+          "title": "系统响应曲线 (目标值 vs 当前值)",
+          "y_label": "数值",
+          "curves": [
+            {"name": "目标值", "color": "#FF6B6B", "width": 2},
+            {"name": "当前值", "color": "#4ECDC4", "width": 2},
+            {"name": "原始值", "color": "#888888", "width": 1, "visible": false}
+          ],
+          "stretch": 1
+        },
+        "btn_row": {
+          "type": "horizontal_layout",
+          "spacing": 10,
+          "children": {
+            "analysis_btn": {
+              "type": "button",
+              "text": "📈 详细分析 (误差/输出/FFT)",
+              "style": {
+                "normal": {"background": "#0E639C", "color": "white", "border_radius": 4, "padding": "8px 16px", "font_weight": "bold"},
+                "hover": {"background": "#1177BB"}
+              }
+            },
+            "extended_btn": {
+              "type": "button",
+              "text": "📊 扩展分析 (性能指标/稳定性/波特图)",
+              "style": {
+                "normal": {"background": "#6A4C93", "color": "white", "border_radius": 4, "padding": "8px 16px", "font_weight": "bold"},
+                "hover": {"background": "#7D5BA6"}
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "realtime_plot_widget": {
+      "type": "custom_widget",
+      "class_name": "RealtimePlotWidget",
+      "backend": "pyqtgraph",
+      "config": {
+        "antialias": false,
+        "use_opengl": true,
+        "background": "#1E1E1E",
+        "foreground": "#CCCCCC",
+        "clip_to_view": true,
+        "downsampling_mode": "peak",
+        "default_max_points": 1000
+      },
+      "layout": {"type": "vertical", "margins": [0, 0, 0, 0], "spacing": 2},
+      "children": {
+        "title_bar": {
+          "type": "horizontal_layout",
+          "children": {
+            "title_label": {
+              "type": "label",
+              "font": {"family": "Microsoft YaHei", "size": 10, "weight": "bold"},
+              "style": {"color": "#FFFFFF", "padding": 2}
+            },
+            "value_label": {
+              "type": "label",
+              "min_width": 300,
+              "style": {
+                "color": "#4FC3F7",
+                "background": "#1E1E1E",
+                "border": "1px solid #3C3C3C",
+                "border_radius": 3,
+                "padding": "2px 8px",
+                "font_family": "Consolas, monospace",
+                "font_size": 11
+              }
+            },
+            "auto_scale_btn": {
+              "type": "button",
+              "text": "🔄 自动缩放",
+              "checkable": true,
+              "checked": true,
+              "fixed_width": 90,
+              "style": {
+                "normal": {"background": "#388E3C", "color": "white", "border_radius": 3, "padding": "3px 6px", "font_size": 10},
+                "hover": {"background": "#43A047"},
+                "unchecked": {"background": "#555555"}
+              }
+            },
+            "points_label": {"type": "label", "text": "显示点数:", "style": {"color": "#AAAAAA"}},
+            "points_combo": {
+              "type": "combo_box",
+              "items": ["500", "1000", "2000", "5000", "全部"],
+              "default_index": 1,
+              "fixed_width": 80
+            }
+          }
+        },
+        "plot_widget": {
+          "type": "pyqtgraph_plot_widget",
+          "grid": {"x": true, "y": true, "alpha": 0.3},
+          "legend": {"offset": [10, 10]},
+          "context_menu": "chinese_context_menu"
+        }
+      },
+      "context_menu_items": [
+        {"type": "action", "text": "🔍 查看全部", "action": "view_all"},
+        {"type": "action", "text": "🔄 重置视图", "action": "reset_view"},
+        {"type": "separator"},
+        {"type": "submenu", "text": "📏 X 轴", "items": [
+          {"text": "自动范围", "action": "x_auto"},
+          {"text": "锁定范围", "action": "x_lock"},
+          {"type": "separator"},
+          {"text": "反转X轴", "checkable": true, "action": "x_invert"}
+        ]},
+        {"type": "submenu", "text": "📐 Y 轴", "items": [
+          {"text": "自动范围", "action": "y_auto"},
+          {"text": "锁定范围", "action": "y_lock"},
+          {"type": "separator"},
+          {"text": "反转Y轴", "checkable": true, "action": "y_invert"}
+        ]},
+        {"type": "separator"},
+        {"type": "submenu", "text": "📊 显示选项", "items": [
+          {"text": "X轴网格", "checkable": true, "checked": true, "action": "grid_x"},
+          {"text": "Y轴网格", "checkable": true, "checked": true, "action": "grid_y"},
+          {"type": "separator"},
+          {"text": "抗锯齿", "checkable": true, "checked": false, "action": "antialias"}
+        ]},
+        {"type": "submenu", "text": "🖱️ 鼠标模式", "items": [
+          {"text": "平移模式", "action": "pan_mode"},
+          {"text": "框选缩放", "action": "rect_mode"}
+        ]},
+        {"type": "separator"},
+        {"type": "submenu", "text": "💾 导出", "items": [
+          {"text": "导出为 PNG 图片", "action": "export_png"},
+          {"text": "导出为 JPG 图片", "action": "export_jpg"},
+          {"text": "导出为 SVG 矢量图", "action": "export_svg"},
+          {"type": "separator"},
+          {"text": "复制到剪贴板", "action": "copy_clipboard"}
+        ]}
+      ]
+    },
+
+    "analysis_window": {
+      "type": "window",
+      "title": "📊 详细分析窗口 - 误差/输出/频谱",
+      "min_size": {"width": 800, "height": 600},
+      "default_size": {"width": 900, "height": 700},
+      "children": {
+        "error_plot": {"ref": "realtime_plot_widget", "title": "误差曲线", "y_label": "误差"},
+        "output_plot": {"ref": "realtime_plot_widget", "title": "控制输出", "y_label": "输出"},
+        "fft_plot": {"ref": "fft_plot_widget"}
+      }
+    },
+
+    "extended_analysis_window": {
+      "type": "window",
+      "title": "📊 扩展分析窗口 - 控制系统性能分析",
+      "min_size": {"width": 1200, "height": 900},
+      "default_size": {"width": 1400, "height": 1000},
+      "layout": {
+        "type": "horizontal_splitter",
+        "sizes": [420, 780]
+      },
+      "children": {
+        "left_panel": {
+          "type": "scroll_area",
+          "children": {
+            "stability_gauge": {"ref": "stability_gauge"},
+            "time_domain_metrics": {
+              "type": "group_box",
+              "title": "⏱️ 时域性能指标 (经典控制)",
+              "metrics": [
+                {"key": "rise_time", "title": "上升时间 (Tr)", "unit": "秒"},
+                {"key": "settling_time", "title": "调节时间 (Ts)", "unit": "秒"},
+                {"key": "overshoot", "title": "超调量 (Mp)", "unit": "%"},
+                {"key": "peak_time", "title": "峰值时间 (Tp)", "unit": "秒"},
+                {"key": "delay_time", "title": "延迟时间 (Td)", "unit": "秒"},
+                {"key": "steady_error", "title": "稳态误差 (Ess)", "unit": ""}
+              ]
+            },
+            "dynamic_metrics": {
+              "type": "group_box",
+              "title": "📐 动态特性指标",
+              "metrics": [
+                {"key": "oscillation", "title": "振荡次数", "unit": "次"},
+                {"key": "damping_ratio", "title": "阻尼比 (ζ)", "unit": ""},
+                {"key": "natural_freq", "title": "自然频率 (ωn)", "unit": "rad/s"},
+                {"key": "decay_ratio", "title": "衰减比", "unit": ""}
+              ]
+            },
+            "frequency_metrics": {
+              "type": "group_box",
+              "title": "📊 频域性能指标",
+              "metrics": [
+                {"key": "bandwidth", "title": "带宽 (BW)", "unit": "Hz"},
+                {"key": "resonance", "title": "谐振峰值 (Mr)", "unit": "dB"},
+                {"key": "resonance_freq", "title": "谐振频率 (ωr)", "unit": "Hz"},
+                {"key": "cutoff_freq", "title": "截止频率 (ωc)", "unit": "Hz"},
+                {"key": "phase_margin", "title": "相位裕度 (PM)", "unit": "°"},
+                {"key": "gain_margin", "title": "增益裕度 (GM)", "unit": "dB"}
+              ]
+            },
+            "statistical_metrics": {
+              "type": "group_box",
+              "title": "📉 统计与质量指标",
+              "metrics": [
+                {"key": "iae", "title": "IAE", "unit": "积分绝对误差"},
+                {"key": "ise", "title": "ISE", "unit": "积分平方误差"},
+                {"key": "itae", "title": "ITAE", "unit": "时间加权IAE"},
+                {"key": "rmse", "title": "RMSE", "unit": "均方根误差"},
+                {"key": "mae", "title": "MAE", "unit": "平均绝对误差"},
+                {"key": "std_error", "title": "误差标准差", "unit": "σ"}
+              ]
+            },
+            "energy_metrics": {
+              "type": "group_box",
+              "title": "⚡ 控制能量指标",
+              "metrics": [
+                {"key": "control_effort", "title": "控制能量", "unit": "∫u²dt"},
+                {"key": "max_control", "title": "最大控制量", "unit": ""},
+                {"key": "control_variance", "title": "控制量方差", "unit": ""},
+                {"key": "smoothness", "title": "平滑度", "unit": "∫(du/dt)²"}
+              ]
+            }
+          }
+        },
+        "right_panel": {
+          "type": "vertical_layout",
+          "children": {
+            "step_response_plot": {
+              "type": "plot_widget",
+              "title": "阶跃响应分析",
+              "stretch": 2
+            },
+            "bode_plot": {
+              "type": "plot_widget",
+              "title": "波特图 - 幅频特性",
+              "log_x": true,
+              "stretch": 1
+            },
+            "error_histogram": {
+              "type": "plot_widget",
+              "title": "误差分布直方图",
+              "stretch": 1
+            }
+          }
+        }
+      }
+    },
+
+    "stability_gauge": {
+      "type": "custom_widget",
+      "class_name": "StabilityGauge",
+      "layout": {"type": "vertical", "margins": [10, 10, 10, 10]},
+      "children": {
+        "title": {
+          "type": "label",
+          "text": "🎯 系统稳定性评估",
+          "alignment": "center",
+          "style": {"color": "#FFFFFF", "font_size": 14, "font_weight": "bold"}
+        },
+        "score_label": {
+          "type": "label",
+          "text": "--",
+          "alignment": "center",
+          "style": {"color": "#4ECDC4", "font_size": 48, "font_weight": "bold"}
+        },
+        "progress_bar": {
+          "type": "progress_bar",
+          "min": 0, "max": 100, "value": 0,
+          "text_visible": false,
+          "fixed_height": 8,
+          "style": {
+            "background": "#3C3C3C",
+            "border_radius": 4,
+            "chunk": {"background": "#4ECDC4", "border_radius": 4}
+          }
+        },
+        "status_label": {
+          "type": "label",
+          "text": "等待数据...",
+          "alignment": "center",
+          "style": {"color": "#888888", "font_size": 12}
+        }
+      }
+    },
+
+    "metric_card": {
+      "type": "frame",
+      "fixed_height": 85,
+      "min_width": 140,
+      "style": {
+        "background": "#2D2D2D",
+        "border": "1px solid #3C3C3C",
+        "border_radius": 6
+      },
+      "layout": {"type": "vertical", "margins": [12, 10, 12, 10], "spacing": 2},
+      "children": {
+        "title_label": {
+          "type": "label",
+          "fixed_height": 16,
+          "style": {"color": "#888888", "font_size": 11, "background": "transparent", "border": "none"}
+        },
+        "value_label": {
+          "type": "label",
+          "text": "--",
+          "fixed_height": 24,
+          "style": {"color": "#FFFFFF", "font_size": 18, "font_weight": "bold", "background": "transparent", "border": "none"}
+        },
+        "status_label": {
+          "type": "label",
+          "fixed_height": 14,
+          "style": {"color": "#666666", "font_size": 10, "background": "transparent", "border": "none"}
+        }
+      }
+    },
+
+    "fft_plot_widget": {
+      "type": "realtime_plot_widget",
+      "title": "频谱分析 (FFT)",
+      "x_label": {"text": "频率", "units": "Hz"},
+      "y_label": {"text": "幅值"},
+      "curves": [
+        {"name": "fft", "color": "#DDA0DD", "width": 2}
+      ],
+      "log_mode": {"x": false, "y": false}
+    }
+  },
+
+  "menu_bar": {
+    "file_menu": {
+      "title": "文件(&F)",
+      "items": [
+        {"text": "导出数据(&E)", "shortcut": "Ctrl+E", "action": "export_data"},
+        {"type": "separator"},
+        {"text": "退出(&X)", "shortcut": "Ctrl+Q", "action": "close"}
+      ]
+    },
+    "view_menu": {
+      "title": "视图(&V)",
+      "items": [
+        {"text": "清空数据(&C)", "shortcut": "Ctrl+L", "action": "clear_data"}
+      ]
+    },
+    "help_menu": {
+      "title": "帮助(&H)",
+      "items": [
+        {"text": "检查更新(&U)", "action": "check_updates"},
+        {"type": "separator"},
+        {"text": "关于(&A)", "action": "show_about"},
+        {"text": "串口协议说明(&P)", "action": "show_protocol_help"}
+      ]
+    }
+  },
+
+  "status_bar": {
+    "default_message": "就绪 - 请选择数据源并连接",
+    "style": {"background": "#007ACC", "color": "white"}
+  },
+
+  "timers": {
+    "plot_update": {"interval_ms": 50, "description": "图表更新 (20 FPS)"},
+    "metrics_update": {"interval_ms": 500, "description": "性能指标更新"},
+    "fft_update": {"interval_ms": 1000, "description": "FFT更新"}
+  },
+
+  "data_protocol": {
+    "serial": {
+      "handshake_format": "#H,<state_count>,<name1>,<name2>,...\\n",
+      "data_format_full": "#D,<seq>,<time_ms>,<target1>,<current1>,<target2>,<current2>,...\\n",
+      "data_format_simple": "#d,<seq>,<time_ms>,<current1>,<current2>,...\\n",
+      "legacy_formats": ["SP:value,PV:value,OUT:value", "value1,value2,value3"]
+    },
+    "udp": {
+      "handshake_frame": {
+        "frame_type": "HANDSHAKE",
+        "version": "2.0",
+        "system_type": "string",
+        "state_count": "int",
+        "states": [{"index": "int", "name": "string", "unit": "string", "description": "string"}]
+      },
+      "data_frame": {
+        "frame_type": "DATA",
+        "seq": "int",
+        "sim_time": "float",
+        "state_count": "int",
+        "states": [{"target": "float", "current": "float"}]
+      }
+    }
+  },
+
+  "performance_settings": {
+    "buffer_max_size": 50000,
+    "plot_throttle_interval_ms": 50,
+    "downsample_target_points": 500,
+    "multiprocess_workers": "cpu_count - 1"
+  },
+
+  "filter_types": [
+    {"key": "none", "name": "无滤波", "description": "不应用任何滤波"},
+    {"key": "moving_average", "name": "移动平均", "description": "平滑噪声，响应较慢"},
+    {"key": "exponential", "name": "指数平滑", "description": "平滑噪声，响应较快"},
+    {"key": "lowpass", "name": "低通滤波", "description": "滤除高频噪声"},
+    {"key": "median", "name": "中值滤波", "description": "去除脉冲噪声"},
+    {"key": "kalman", "name": "卡尔曼滤波", "description": "最优估计，需要模型"},
+    {"key": "fusion", "name": "融合滤波", "description": "多种滤波算法融合"}
+  ]
+}

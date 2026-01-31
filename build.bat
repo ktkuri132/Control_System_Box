@@ -20,12 +20,16 @@ nuitka --standalone ^
     --onefile ^
     --enable-plugin=pyqt6 ^
     --windows-console-mode=disable ^
+    --windows-icon-from-ico=img/icon.ico ^
+    --include-data-dir=img=img ^
     --output-dir=dist ^
     --output-filename=ControlSystemTool.exe ^
     --company-name="ControlSystemBox" ^
     --product-name="控制系统分析工具" ^
-    --file-version=2.0.0 ^
-    --product-version=2.0.0 ^
+    --file-version=2.0.1 ^
+    --product-version=2.0.1 ^
+    --file-description="控制系统实时分析工具" ^
+    --copyright="Copyright (c) 2025 ktkuri132" ^
     --assume-yes-for-downloads ^
     main.py
 

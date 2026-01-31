@@ -4,14 +4,13 @@
 唯一区别是数据接收方式不同
 """
 import numpy as np
-from collections import deque
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
     QStatusBar, QMessageBox, QFileDialog,
     QStackedWidget, QButtonGroup, QRadioButton,
     QFrame, QLabel
 )
-from PyQt6.QtCore import QTimer, Qt
+from PyQt6.QtCore import QTimer, Qt, QObject, pyqtSignal
 from PyQt6.QtGui import QAction
 
 from ui.plot_widgets import MultiPlotWidget
@@ -23,6 +22,25 @@ from core.performance_analyzer import PerformanceAnalyzer
 from core.simulator_receiver import SimulatorReceiver
 from core.unified_data_protocol import UnifiedData, HandshakeInfo, StateValue
 from core.updater import AutoUpdater, get_current_version
+from core.signal_filter import (
+    get_filter, set_all_filters_enabled, set_all_filters_type,
+    set_all_filters_strength, reset_all_filters, HarmonicAnalyzer
+)
+# 使用多进程处理器以充分利用多核 CPU
+from core.multiprocess_processor import (
+    MultiProcessDataProcessor, HighPerformanceBuffer,
+    PlotUpdateThrottler, DataDownsampler
+)
+# 调试性能分析器
+from core.debug_profiler import (
+    DEBUG_MODE, profile_method, ProfileBlock,
+    start_profiling, stop_profiling, print_performance_report, get_profiler
+)
+
+
+class DataProcessedSignalBridge(QObject):
+    """信号桥接器 - 用于从工作线程安全地发送数据到主线程"""
+    data_ready = pyqtSignal(object)  # 使用 object 类型更兼容
 
 
 class DataSourceMode:
@@ -45,18 +63,29 @@ class MainWindow(QMainWindow):
         self._simulator_receiver = SimulatorReceiver()
         self._analyzer = PerformanceAnalyzer()
         
-        # ★ 统一数据缓冲区 - 两种模式共用
-        self._data_buffer = {
-            'timestamps': deque(maxlen=50000),
-            'states': [],  # List[Dict[int, StateValue]]
-        }
-        self._max_buffer_size = 50000
+        # ★ 高性能数据缓冲区 - 两种模式共用
+        self._data_buffer = HighPerformanceBuffer(max_size=50000)
+
+        # 绑图更新节流器
+        self._plot_throttler = PlotUpdateThrottler(min_interval_ms=50)  # 20 FPS
+
+        # ★ 信号桥接器 - 用于线程安全的数据传递
+        self._signal_bridge = DataProcessedSignalBridge()
+        self._signal_bridge.data_ready.connect(self._on_data_processed)
+
+        # ★ 多进程数据处理器 - 充分利用多核 CPU
+        self._data_processor = MultiProcessDataProcessor()
+        self._data_processor.set_callback(self._on_data_processed_from_worker)
+        self._data_processor.start()
 
         # 握手信息
         self._handshake: HandshakeInfo = None
 
         # 状态标志
         self._is_paused = False
+
+        # 谐波分析器
+        self._harmonic_analyzer = HarmonicAnalyzer(sample_rate=100.0)
 
         # 初始化UI
         self._setup_ui()
@@ -66,15 +95,26 @@ class MainWindow(QMainWindow):
         # 初始化串口列表
         self._control_panel.serial_panel.refresh_ports()
 
+        # 连接滤波面板信号
+        self._control_panel.filter_panel.filter_changed.connect(self._on_filter_changed)
+
         # 初始化自动更新器
         self._updater = AutoUpdater(self)
 
         # 启动时静默检查更新
         QTimer.singleShot(2000, lambda: self._updater.check_for_updates(silent=True))
 
+        # ★ 调试模式：启动性能监控
+        if DEBUG_MODE:
+            start_profiling()
+            # 定时打印性能报告
+            self._debug_timer = QTimer()
+            self._debug_timer.timeout.connect(print_performance_report)
+            self._debug_timer.start(10000)  # 每 10 秒打印一次
+
     def _setup_ui(self):
         """设置用户界面"""
-        self.setWindowTitle("控制系统实时分析工具 v2.0")
+        self.setWindowTitle("控制系统实时分析工具 v2.1.1")
         self.setMinimumSize(1200, 700)
         self.resize(1400, 800)
         
@@ -406,85 +446,117 @@ class MainWindow(QMainWindow):
             return
         
         # 检测时间戳重置
-        if len(self._data_buffer['timestamps']) > 0:
-            last_time = self._data_buffer['timestamps'][-1]
-            if data.timestamp < last_time - 0.5:
+        if len(self._data_buffer) > 0:
+            timestamps, _ = self._data_buffer.get_data(1)
+            if len(timestamps) > 0 and data.timestamp < timestamps[-1] - 0.5:
                 self._clear_data()
                 self._status_bar.showMessage("检测到数据重置，已清空缓冲区")
-
-        # 存储数据
-        self._data_buffer['timestamps'].append(data.timestamp)
 
         # 存储所有状态
         states_dict = {}
         for i, state in enumerate(data.states):
             states_dict[i] = {'target': state.target, 'current': state.current}
-        self._data_buffer['states'].append(states_dict)
 
-        # 限制缓冲区大小
-        if len(self._data_buffer['states']) > self._max_buffer_size:
-            self._data_buffer['states'].pop(0)
+        # 使用高性能缓冲区存储
+        self._data_buffer.append(data.timestamp, states_dict)
 
         # 更新数据点数
-        self._control_panel.data_panel.set_data_count(len(self._data_buffer['timestamps']))
+        self._control_panel.data_panel.set_data_count(len(self._data_buffer))
 
     def _update_plots(self):
-        """更新图表"""
+        """更新图表 - 使用节流和多进程优化"""
         if self._is_paused:
             return
         
-        if len(self._data_buffer['timestamps']) == 0:
+        # 节流检查
+        if not self._plot_throttler.should_update():
+            return
+
+        buffer_len = len(self._data_buffer)
+        if buffer_len == 0:
             return
         
-        n = min(2000, len(self._data_buffer['timestamps']))
-        timestamps = np.array(list(self._data_buffer['timestamps']))[-n:]
+        with ProfileBlock("update_plots.get_data"):
+            # 限制绑图数据点数
+            n = min(3000, buffer_len)  # 多进程可以处理更多数据
+            timestamps, states = self._data_buffer.get_data(n)
+
+        if len(timestamps) == 0:
+            return
 
         # 获取用户选择的状态索引
         selected_idx = self._plot_widget.get_selected_state_index()
 
-        # 提取选中状态的数据
-        setpoints = []
-        process_values = []
-        for state_dict in self._data_buffer['states'][-n:]:
-            if selected_idx in state_dict:
-                setpoints.append(state_dict[selected_idx]['target'])
-                process_values.append(state_dict[selected_idx]['current'])
-            else:
-                setpoints.append(0.0)
-                process_values.append(0.0)
+        # 获取滤波器设置
+        signal_filter = get_filter(selected_idx)
+        filter_enabled = signal_filter.enabled
 
-        setpoints = np.array(setpoints)
-        process_values = np.array(process_values)
-        errors = setpoints - process_values
+        # 设置多进程处理器的滤波参数
+        if filter_enabled:
+            self._data_processor.set_filter(
+                signal_filter.get_filter_type_key(),  # 使用英文键名
+                signal_filter.strength / 10.0,  # 转换为 0-1 范围
+                signal_filter.window_size
+            )
+            self._plot_widget.standard_plot.set_show_raw(True)
+        else:
+            self._data_processor.set_filter('none', 0.3, 5)
+            self._plot_widget.standard_plot.set_show_raw(False)
 
-        # 控制输出：如果有多个状态，使用最后一个
-        outputs = np.zeros_like(timestamps)
-        if self._data_buffer['states'] and len(self._data_buffer['states'][-1]) > 1:
-            last_idx = max(self._data_buffer['states'][-1].keys())
-            for i, state_dict in enumerate(self._data_buffer['states'][-n:]):
-                if last_idx in state_dict:
-                    outputs[i] = state_dict[last_idx]['current']
+        # 提交给多进程处理（非阻塞）
+        self._data_processor.submit_task(timestamps, states, selected_idx)
 
-        self._plot_widget.standard_plot.update_data(
-            timestamps, setpoints, process_values, errors, outputs
-        )
+    def _on_data_processed_from_worker(self, result: dict):
+        """
+        多进程处理完成回调（在工作线程中调用）
+        通过 Qt 信号安全地转发到主线程
+        """
+        # 使用信号桥接器安全地发送到主线程
+        try:
+            self._signal_bridge.data_ready.emit(result)
+        except Exception as e:
+            print(f"[MainWindow] 发送信号失败: {e}")
+
+    @profile_method
+    def _on_data_processed(self, result: dict):
+        """后台处理完成回调（在主线程中执行）"""
+        try:
+            timestamps = result['timestamps']
+            setpoints = result['setpoints']
+            process_values = result['process_values']
+            raw_values = result['raw_values']
+            errors = result['errors']
+            outputs = result['outputs']
+
+            with ProfileBlock("plot_update"):
+                # 多进程处理器已经做了降采样，直接更新图表
+                self._plot_widget.standard_plot.update_data(
+                    timestamps, setpoints, process_values, errors, outputs, raw_values
+                )
+        except Exception as e:
+            print(f"[MainWindow] 更新图表失败: {e}")
+            import traceback
+            traceback.print_exc()
 
     def _update_metrics(self):
         """更新性能指标"""
-        if self._is_paused or len(self._data_buffer['timestamps']) < 10:
+        if self._is_paused or len(self._data_buffer) < 10:
             return
         
         selected_idx = self._plot_widget.get_selected_state_index()
-        n = len(self._data_buffer['timestamps'])
+        timestamps, states = self._data_buffer.get_data()
 
-        timestamps = np.array(list(self._data_buffer['timestamps']))
+        if len(timestamps) < 10:
+            return
+
+        # 提取数据
         setpoints = np.array([
             s.get(selected_idx, {}).get('target', 0.0)
-            for s in self._data_buffer['states']
+            for s in states
         ])
         process_values = np.array([
             s.get(selected_idx, {}).get('current', 0.0)
-            for s in self._data_buffer['states']
+            for s in states
         ])
         errors = setpoints - process_values
 
@@ -492,27 +564,52 @@ class MainWindow(QMainWindow):
         self._control_panel.metrics_panel.update_serial_metrics(metrics)
 
     def _update_fft(self):
-        """更新FFT"""
-        if self._is_paused or len(self._data_buffer['timestamps']) < 64:
+        """更新FFT和谐波分析"""
+        if self._is_paused or len(self._data_buffer) < 64:
             return
         
         selected_idx = self._plot_widget.get_selected_state_index()
-        n = min(4096, len(self._data_buffer['timestamps']))
+        n = min(4096, len(self._data_buffer))
+        timestamps, states = self._data_buffer.get_data(n)
 
-        timestamps = np.array(list(self._data_buffer['timestamps']))[-n:]
-        setpoints = np.array([
-            s.get(selected_idx, {}).get('target', 0.0)
-            for s in self._data_buffer['states'][-n:]
-        ])
+        if len(timestamps) < 64:
+            return
+
+        # 高效提取数据
         process_values = np.array([
             s.get(selected_idx, {}).get('current', 0.0)
-            for s in self._data_buffer['states'][-n:]
+            for s in states
+        ])
+        setpoints = np.array([
+            s.get(selected_idx, {}).get('target', 0.0)
+            for s in states
         ])
         errors = setpoints - process_values
 
+        # 更新FFT图
         freq, mag = self._analyzer.compute_fft(timestamps, errors)
         if len(freq) > 0:
             self._plot_widget.standard_plot.update_fft(freq, mag)
+
+        # 谐波分析 - 对原始测量值进行
+        if len(process_values) >= 64:
+            # 估算采样率
+            if len(timestamps) > 1:
+                dt = np.mean(np.diff(timestamps))
+                if dt > 0:
+                    self._harmonic_analyzer.sample_rate = 1.0 / dt
+
+            # 执行谐波分析
+            analysis = self._harmonic_analyzer.analyze(process_values)
+
+            # 更新滤波面板的谐波显示
+            self._control_panel.filter_panel.update_harmonic_analysis(analysis)
+
+    def _on_filter_changed(self):
+        """滤波设置变化时的处理"""
+        # 重置所有滤波器状态
+        reset_all_filters()
+        self._status_bar.showMessage("滤波设置已更新")
 
     # ============ 控制命令 ============
 
@@ -543,8 +640,8 @@ class MainWindow(QMainWindow):
     
     def _clear_data(self):
         """清空数据"""
-        self._data_buffer['timestamps'].clear()
-        self._data_buffer['states'].clear()
+        self._data_buffer.clear()
+        reset_all_filters()
         self._plot_widget.clear_all()
         self._control_panel.data_panel.set_data_count(0)
         self._control_panel.metrics_panel.clear()
@@ -552,7 +649,7 @@ class MainWindow(QMainWindow):
 
     def _export_data(self):
         """导出数据"""
-        if len(self._data_buffer['timestamps']) == 0:
+        if len(self._data_buffer) == 0:
             QMessageBox.information(self, "导出", "没有数据可导出")
             return
         
@@ -564,6 +661,8 @@ class MainWindow(QMainWindow):
             return
         
         try:
+            timestamps, states = self._data_buffer.get_data()
+
             with open(file_path, 'w', encoding='utf-8') as f:
                 # 写入表头
                 if self._handshake:
@@ -576,8 +675,6 @@ class MainWindow(QMainWindow):
                     f.write("时间(s),状态\n")
 
                 # 写入数据
-                timestamps = list(self._data_buffer['timestamps'])
-                states = self._data_buffer['states']
                 for i, t in enumerate(timestamps):
                     row = [f"{t:.4f}"]
                     if i < len(states):
@@ -650,6 +747,17 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         """窗口关闭"""
+        # ★ 调试模式：打印最终性能报告并停止监控
+        if DEBUG_MODE:
+            print("\n=== 程序关闭，打印最终性能报告 ===")
+            print_performance_report()
+            print("\n瓶颈分析:")
+            print(get_profiler().get_bottleneck_analysis())
+            stop_profiling()
+
+        # 停止多进程数据处理器
+        self._data_processor.stop()
+
         if self._serial_manager.is_connected:
             self._serial_manager.disconnect()
         if self._simulator_receiver.is_connected:

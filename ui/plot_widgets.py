@@ -12,11 +12,13 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QAction
 
 
-# 配置 PyQtGraph
+# ★ 配置 PyQtGraph - 性能优化设置
 pg.setConfigOptions(
-    antialias=True,           # 抗锯齿
-    useOpenGL=False,          # 禁用 OpenGL (某些系统兼容性问题)
-    enableExperimental=False, # 禁用实验性功能
+    antialias=False,          # 禁用抗锯齿提升性能
+    useOpenGL=True,           # ★ 启用 OpenGL 加速
+    enableExperimental=False,
+    background='#1E1E1E',
+    foreground='#CCCCCC',
 )
 
 
@@ -34,10 +36,13 @@ class ChinesePlotWidget(pg.PlotWidget):
         self.getAxis('left').enableAutoSIPrefix(False)
         self.getAxis('bottom').enableAutoSIPrefix(False)
 
+        # ★ 性能优化：启用视图裁剪
+        self.setClipToView(True)
+
         # 状态标记
         self._grid_x = True
         self._grid_y = True
-        self._antialias = True
+        self._antialias = False  # ★ 默认禁用抗锯齿
 
     def setTitle(self, title, **kwargs):
         """设置图表标题"""
@@ -313,6 +318,15 @@ class RealtimePlotWidget(QWidget):
         self._plot_widget.showGrid(x=True, y=True, alpha=0.3)
         self._plot_widget.setLabel('bottom', '时间', units='秒')
         
+        # ★ 性能优化：禁用抗锯齿（大幅提升渲染速度）
+        self._plot_widget.setAntialiasing(False)
+
+        # ★ 性能优化：启用视图裁剪
+        self._plot_widget.setClipToView(True)
+
+        # ★ 性能优化：设置降采样模式
+        self._plot_widget.setDownsampling(mode='peak')
+
         # 添加图例
         self._plot_widget.addLegend(offset=(10, 10))
         
@@ -361,18 +375,22 @@ class RealtimePlotWidget(QWidget):
             color = self.COLORS.get(name, '#FFFFFF')
         
         pen = pg.mkPen(color=color, width=width)
-        curve = self._plot_widget.plot([], [], pen=pen, name=name)
+        # ★ 性能优化：使用 'finite' 连接模式跳过 NaN 检查
+        curve = self._plot_widget.plot([], [], pen=pen, name=name,
+                                       connect='finite', skipFiniteCheck=True)
         self._curves[name] = curve
         return curve
     
     def update_curve(self, name: str, x: np.ndarray, y: np.ndarray):
-        """更新曲线数据"""
+        """更新曲线数据 - 性能优化版"""
         if name not in self._curves:
             self.add_curve(name)
         
-        # 确保是numpy数组并复制数据
-        x = np.asarray(x).copy()
-        y = np.asarray(y).copy()
+        # 确保是numpy数组（避免不必要的复制）
+        if not isinstance(x, np.ndarray):
+            x = np.asarray(x)
+        if not isinstance(y, np.ndarray):
+            y = np.asarray(y)
 
         # 限制显示点数
         if self._max_points and len(x) > self._max_points:
@@ -381,7 +399,10 @@ class RealtimePlotWidget(QWidget):
         
         # 设置标志，防止数据更新触发range changed
         self._is_updating = True
+
+        # ★ 性能优化：使用 setData 的优化选项
         self._curves[name].setData(x, y)
+
         self._is_updating = False
 
         # 更新最新值显示 - 使用 .item() 确保获取Python原生类型

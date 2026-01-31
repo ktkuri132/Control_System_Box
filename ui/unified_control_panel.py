@@ -15,6 +15,7 @@ from ui.control_panel import (
     SerialConfigPanel, PIDControlPanel, SetpointPanel, 
     MetricsPanel, DataControlPanel
 )
+from ui.filter_panel import FilterControlPanel
 
 
 class SimulatorConfigPanel(StyledGroupBox):
@@ -386,6 +387,10 @@ class UnifiedControlPanel(QWidget):
         self.data_panel = DataControlPanel()
         layout.addWidget(self.data_panel)
         
+        # ===== 6. 滤波控制 =====
+        self.filter_panel = FilterControlPanel()
+        layout.addWidget(self.filter_panel)
+
         # 弹簧
         layout.addStretch()
         

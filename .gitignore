@@ -37,6 +37,10 @@ Thumbs.db
 # Logs
 *.log
 
+# Performance test output
+performance_report.txt
+performance_data.json
+
 # Local config
 .env
 config.local.py

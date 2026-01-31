@@ -1018,7 +1018,8 @@ class StandardResponseWidget(QWidget):
     
     COLORS = {
         'setpoint': '#FF6B6B',      # 红色 - 设定值
-        'process_value': '#4ECDC4', # 青色 - 过程值
+        'process_value': '#4ECDC4', # 青色 - 过程值（滤波后）
+        'raw_value': '#888888',     # 灰色 - 原始值（滤波前）
     }
     
     def __init__(self, parent=None):
@@ -1026,6 +1027,7 @@ class StandardResponseWidget(QWidget):
         self._analysis_window = None
         self._extended_window = None
         self._cached_data = {}
+        self._show_raw = False  # 是否显示原始值曲线
         self._setup_ui()
     
     def _setup_ui(self):
@@ -1038,6 +1040,9 @@ class StandardResponseWidget(QWidget):
         self.response_plot.set_y_label("数值")
         self.response_plot.add_curve('目标值', self.COLORS['setpoint'], width=2)
         self.response_plot.add_curve('当前值', self.COLORS['process_value'], width=2)
+        # 添加原始值曲线（默认隐藏）
+        self._raw_curve = self.response_plot.add_curve('原始值', self.COLORS['raw_value'], width=1)
+        self._raw_curve.setVisible(False)
         layout.addWidget(self.response_plot, stretch=1)
         
         # 按钮区域
@@ -1105,8 +1110,17 @@ class StandardResponseWidget(QWidget):
     
     def update_data(self, timestamps: np.ndarray, setpoints: np.ndarray,
                     process_values: np.ndarray, errors: np.ndarray, 
-                    outputs: np.ndarray):
-        """更新所有图表数据"""
+                    outputs: np.ndarray, raw_values: np.ndarray = None):
+        """更新所有图表数据
+
+        Args:
+            timestamps: 时间戳
+            setpoints: 设定值
+            process_values: 处理后的值（可能已滤波）
+            errors: 误差
+            outputs: 输出
+            raw_values: 原始值（滤波前），如果为 None 则不显示原始曲线
+        """
         if len(timestamps) == 0:
             return
         
@@ -1123,6 +1137,13 @@ class StandardResponseWidget(QWidget):
         self.response_plot.update_curve('目标值', timestamps, setpoints)
         self.response_plot.update_curve('当前值', timestamps, process_values)
 
+        # 更新原始值曲线（如果启用滤波）
+        if raw_values is not None and self._show_raw:
+            self._raw_curve.setVisible(True)
+            self.response_plot.update_curve('原始值', timestamps, raw_values)
+        else:
+            self._raw_curve.setVisible(False)
+
         # 更新详细分析窗口（如果打开）
         if self._analysis_window and self._analysis_window.isVisible():
             self._analysis_window.update_data(**self._cached_data)
@@ -1131,6 +1152,11 @@ class StandardResponseWidget(QWidget):
         if self._extended_window and self._extended_window.isVisible():
             self._extended_window.update_data(**self._cached_data)
     
+    def set_show_raw(self, show: bool):
+        """设置是否显示原始值曲线"""
+        self._show_raw = show
+        self._raw_curve.setVisible(show)
+
     def update_fft(self, frequencies: np.ndarray, magnitudes: np.ndarray):
         """更新FFT数据"""
         if self._analysis_window and self._analysis_window.isVisible():

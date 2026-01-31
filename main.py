@@ -37,7 +37,7 @@ def main():
     
     # 设置应用程序信息
     app.setApplicationName("控制系统分析工具")
-    app.setApplicationVersion("2.1.1")
+    app.setApplicationVersion("2.1.2")
     app.setOrganizationName("ControlSystemBox")
     
     # 设置应用图标

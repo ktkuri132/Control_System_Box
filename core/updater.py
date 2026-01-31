@@ -14,8 +14,39 @@ from PyQt6.QtWidgets import (QMessageBox, QProgressDialog, QApplication)
 
 # 配置
 GITHUB_REPO = "ktkuri132/Control_System_Box"
-CURRENT_VERSION = "2.0.1"
+CURRENT_VERSION = "2.1.2"  # ★ 当前版本号
 UPDATE_CHECK_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+
+
+def is_frozen() -> bool:
+    """
+    检测是否为打包后的可执行文件
+    支持 PyInstaller、Nuitka、cx_Freeze 等
+    """
+    # 方法1: PyInstaller 设置的 frozen 属性
+    if getattr(sys, 'frozen', False):
+        return True
+
+    # 方法2: Nuitka 编译检测 - 检查 __compiled__ 模块
+    try:
+        import __compiled__
+        return True
+    except ImportError:
+        pass
+
+    # 方法3: 检查可执行文件名
+    exe_path = sys.executable.lower()
+    exe_name = os.path.basename(exe_path)
+
+    # 如果是我们的程序名，肯定是打包后的
+    if 'controlsystemtool' in exe_name:
+        return True
+
+    # 如果不是 python 解释器，也认为是打包后的
+    if exe_path.endswith('.exe') and 'python' not in exe_name:
+        return True
+
+    return False
 
 
 class VersionChecker(QThread):
@@ -222,8 +253,8 @@ class AutoUpdater(QObject):
         try:
             current_exe = sys.executable
 
-            # 如果是打包后的 exe
-            if getattr(sys, 'frozen', False):
+            # 检测是否为打包后的 exe
+            if is_frozen():
                 # 创建更新脚本
                 update_script = os.path.join(tempfile.gettempdir(), 'update.bat')
 

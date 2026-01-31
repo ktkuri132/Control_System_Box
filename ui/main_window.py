@@ -114,7 +114,7 @@ class MainWindow(QMainWindow):
 
     def _setup_ui(self):
         """设置用户界面"""
-        self.setWindowTitle("控制系统实时分析工具 v2.1.1")
+        self.setWindowTitle("控制系统实时分析工具 v2.1.2")
         self.setMinimumSize(1200, 700)
         self.resize(1400, 800)
         

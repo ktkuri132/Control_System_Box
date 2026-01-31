@@ -1,0 +1,26 @@
+========================================
+  Control System Box - 环境检测
+========================================
+
+[1] 检查 CMake...
+C:\Program Files\CMake\bin\cmake.exe
+cmake version 4.1.0
+
+CMake suite maintained and supported by Kitware (kitware.com/cmake).
+
+[2] 检查 Visual Studio...
+Visual Studio Community 2026
+C:\Program Files\Microsoft Visual Studio\18\Community
+
+[3] 检查 Qt...
+Qt 未在 PATH 中找到
+'��见' is not recognized as an internal or external command,
+operable program or batch file.
+
+[4] 检查 MSBuild...
+MSBuild 未在 PATH 中
+
+========================================
+检测完成
+========================================
+Press any key to continue . . . 

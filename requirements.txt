@@ -1,6 +1,0 @@
-PyQt6>=6.4.0
-pyqtgraph>=0.13.0
-numpy>=1.24.0
-scipy>=1.10.0
-pyserial>=3.5
-psutil>=5.9.0  # 可选：用于调试模式的 CPU 监控

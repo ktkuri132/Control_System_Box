@@ -1,0 +1,146 @@
+========================================
+ Control System Box - 构建脚本
+========================================
+
+[1] 设置 Visual Studio 2026 环境...
+**********************************************************************
+** Visual Studio 2026 Developer Command Prompt v18.0.1
+** Copyright (c) 2025 Microsoft Corporation
+**********************************************************************
+[DEBUG:ext\vcvars.bat] Found potential v145 version file: 'Microsoft.VCToolsVersion.VC.14.50.18.0.txt'
+[DEBUG:ext\vcvars.bat] Testing v145 version file: 'Microsoft.VCToolsVersion.VC.14.50.18.0.txt'
+[vcvarsall.bat] Environment initialized for: 'x64'
+VS 环境设置完成
+
+[2] Qt 路径: C:\Qt\6.10.2\msvc2022_64
+
+[3] 运行 CMake 配置...
+-- The CXX compiler identification is MSVC 19.50.35718.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+-- Looking for pthread_create in pthreads
+-- Looking for pthread_create in pthreads - not found
+-- Looking for pthread_create in pthread
+-- Looking for pthread_create in pthread - not found
+-- Found Threads: TRUE
+-- Performing Test HAVE_STDATOMIC
+-- Performing Test HAVE_STDATOMIC - Success
+-- Found WrapAtomic: TRUE
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+-- Eigen3 not found, will use bundled headers if available
+-- ===============================================
+-- Control System Box - C++ Qt6 Version
+-- ===============================================
+-- Version: 2.1.2
+-- Qt6 Found: YES
+-- FFTW3 Found: 0
+-- Eigen3 Found: 0
+-- QCustomPlot: 
+-- ===============================================
+-- Configuring done (2.8s)
+-- Generating done (0.2s)
+-- Build files have been written to: C:/Users/ktkuri/Desktop/Control_System_Box/build
+CMake 配置完成
+
+[4] 开始编译...
+[1/31] Automatic MOC and UIC for target ControlSystemBox
+[2/31] Automatic RCC for resources/resources.qrc
+[3/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\core\PerformanceAnalyzer.cpp.obj
+[4/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\core\SignalFilter.cpp.obj
+[5/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\core\DataBuffer.cpp.obj
+[6/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\core\DataProcessor.cpp.obj
+[7/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\ui\panels\SetpointPanel.cpp.obj
+[8/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\ui\panels\DataControlPanel.cpp.obj
+[9/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\core\SimulatorReceiver.cpp.obj
+[10/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\ui\panels\PIDControlPanel.cpp.obj
+[11/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\ui\panels\SimulatorConfigPanel.cpp.obj
+[12/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\core\UnifiedDataProtocol.cpp.obj
+[13/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\core\SerialManager.cpp.obj
+[14/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\ui\panels\MetricsPanel.cpp.obj
+[15/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\main.cpp.obj
+[16/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\ui\panels\SerialConfigPanel.cpp.obj
+[17/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\ui\panels\FilterPanel.cpp.obj
+[18/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\ui\panels\UnifiedControlPanel.cpp.obj
+[19/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\ui\MainWindow.cpp.obj
+[20/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\ui\widgets\DialWithLabel.cpp.obj
+[21/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\ui\widgets\SliderWithLabel.cpp.obj
+[22/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\ui\widgets\MetricCard.cpp.obj
+[23/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\ui\widgets\StabilityGauge.cpp.obj
+[24/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\ui\windows\ExtendedAnalysisWindow.cpp.obj
+[25/31] Building CXX object CMakeFiles\ControlSystemBox.dir\ControlSystemBox_autogen\mocs_compilation.cpp.obj
+[26/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\ui\plots\FFTPlotWidget.cpp.obj
+[27/31] Building CXX object CMakeFiles\ControlSystemBox.dir\ControlSystemBox_autogen\3YJK5W5UP7\qrc_resources.cpp.obj
+[28/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\ui\windows\AnalysisWindow.cpp.obj
+[29/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\ui\plots\SimulatorPlotWidget.cpp.obj
+[30/31] Building CXX object CMakeFiles\ControlSystemBox.dir\src\ui\plots\RealtimePlotWidget.cpp.obj
+[31/31] Linking CXX executable ControlSystemBox.exe; Running windeployqt...
+C:\Users\ktkuri\Desktop\Control_System_Box\build\ControlSystemBox.exe 64 bit, release executable
+Adding in plugin type generic for module: Qt6Gui
+Adding in plugin type iconengines for module: Qt6Gui
+Adding Qt6Svg for qsvgicon.dll from plugin type: iconengines
+Adding in plugin type imageformats for module: Qt6Gui
+Adding in plugin type networkinformation for module: Qt6Network
+Adding in plugin type platforminputcontexts for module: Qt6Gui
+Skipping plugin qtvirtualkeyboardplugin.dll due to disabled dependencies (Qt6Qml Qt6Quick).
+Adding in plugin type platforms for module: Qt6Gui
+Adding in plugin type styles for module: Qt6Widgets
+Adding in plugin type tls for module: Qt6Network
+Skipping plugin qopensslbackend.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+Performing additional pass of finding Qt plugins due to updated Qt module list: Qt6Charts Qt6Core Qt6Gui Qt6Network Qt6OpenGL Qt6OpenGLWidgets Qt6SerialPort Qt6Svg Qt6Widgets
+Adding in plugin type generic for module: Qt6Gui
+Adding in plugin type iconengines for module: Qt6Gui
+Adding in plugin type imageformats for module: Qt6Gui
+Adding in plugin type networkinformation for module: Qt6Network
+Adding in plugin type platforminputcontexts for module: Qt6Gui
+Skipping plugin qtvirtualkeyboardplugin.dll due to disabled dependencies (Qt6Qml Qt6Quick).
+Adding in plugin type platforms for module: Qt6Gui
+Adding in plugin type styles for module: Qt6Widgets
+Adding in plugin type tls for module: Qt6Network
+Skipping plugin qopensslbackend.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+Direct dependencies: Qt6Charts Qt6Core Qt6Gui Qt6Network Qt6OpenGL Qt6OpenGLWidgets Qt6SerialPort Qt6Widgets
+All dependencies   : Qt6Charts Qt6Core Qt6Gui Qt6Network Qt6OpenGL Qt6OpenGLWidgets Qt6SerialPort Qt6Widgets
+To be deployed     : Qt6Charts Qt6Core Qt6Gui Qt6Network Qt6OpenGL Qt6OpenGLWidgets Qt6SerialPort Qt6Svg Qt6Widgets
+Updating icuuc.dll.
+Updating Qt6Charts.dll.
+Updating Qt6Core.dll.
+Updating Qt6Gui.dll.
+Updating Qt6Network.dll.
+Updating Qt6OpenGL.dll.
+Updating Qt6OpenGLWidgets.dll.
+Updating Qt6SerialPort.dll.
+Updating Qt6Svg.dll.
+Updating Qt6Widgets.dll.
+Updating dxcompiler.dll.
+Updating dxil.dll.
+Updating vc_redist.x64.exe.
+Creating directory C:/Users/ktkuri/Desktop/Control_System_Box/build/generic.
+Updating qtuiotouchplugin.dll.
+Creating directory C:/Users/ktkuri/Desktop/Control_System_Box/build/iconengines.
+Updating qsvgicon.dll.
+Creating directory C:/Users/ktkuri/Desktop/Control_System_Box/build/imageformats.
+Updating qgif.dll.
+Updating qico.dll.
+Updating qjpeg.dll.
+Updating qsvg.dll.
+Creating directory C:/Users/ktkuri/Desktop/Control_System_Box/build/networkinformation.
+Updating qnetworklistmanager.dll.
+Creating directory C:/Users/ktkuri/Desktop/Control_System_Box/build/platforms.
+Updating qwindows.dll.
+Creating directory C:/Users/ktkuri/Desktop/Control_System_Box/build/styles.
+Updating qmodernwindowsstyle.dll.
+Creating directory C:/Users/ktkuri/Desktop/Control_System_Box/build/tls.
+Updating qcertonlybackend.dll.
+Updating qschannelbackend.dll.
+
+========================================
+ 编译成功！
+========================================
+可执行文件位于: C:\Users\ktkuri\Desktop\Control_System_Box\build\ControlSystemBox.exe
+
+Press any key to continue . . . 

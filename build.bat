@@ -1,45 +1,58 @@
 @echo off
 chcp 65001 >nul
+setlocal
+
 echo ========================================
-echo   控制系统分析工具 - Nuitka 编译脚本
+echo  Control System Box - 构建脚本
 echo ========================================
 echo.
 
-echo [1/3] 检查 Nuitka 安装...
-pip show nuitka >nul 2>&1
+REM 设置 VS 2026 环境
+echo [1] 设置 Visual Studio 2026 环境...
+call "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvarsall.bat" x64
 if errorlevel 1 (
-    echo Nuitka 未安装，正在安装...
-    pip install nuitka ordered-set
+    echo 错误: 无法设置 VS 环境
+    exit /b 1
+)
+echo VS 环境设置完成
+echo.
+
+REM 设置 Qt 路径
+set Qt6_DIR=C:\Qt\6.10.2\msvc2022_64\lib\cmake\Qt6
+set CMAKE_PREFIX_PATH=C:\Qt\6.10.2\msvc2022_64
+set PATH=%PATH%;C:\Qt\6.10.2\msvc2022_64\bin
+
+echo [2] Qt 路径: %CMAKE_PREFIX_PATH%
+echo.
+
+REM 创建 build 目录
+cd /d "%~dp0"
+if not exist build mkdir build
+cd build
+
+REM 运行 CMake 配置
+echo [3] 运行 CMake 配置...
+cmake .. -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%CMAKE_PREFIX_PATH%"
+if errorlevel 1 (
+    echo 错误: CMake 配置失败
+    exit /b 1
+)
+echo CMake 配置完成
+echo.
+
+REM 编译
+echo [4] 开始编译...
+cmake --build . --config Release -j %NUMBER_OF_PROCESSORS%
+if errorlevel 1 (
+    echo 错误: 编译失败
+    exit /b 1
 )
 
-echo [2/3] 开始编译...
-echo 这可能需要几分钟时间，请耐心等待...
+echo.
+echo ========================================
+echo  编译成功！
+echo ========================================
+echo 可执行文件位于: %cd%\ControlSystemBox.exe
 echo.
 
-nuitka --standalone ^
-    --onefile ^
-    --enable-plugin=pyqt6 ^
-    --windows-console-mode=disable ^
-    --windows-icon-from-ico=img/icon.ico ^
-    --include-data-dir=img=img ^
-    --output-dir=dist ^
-    --output-filename=ControlSystemTool.exe ^
-    --company-name="ControlSystemBox" ^
-    --product-name="控制系统分析工具" ^
-    --file-version=2.0.1 ^
-    --product-version=2.0.1 ^
-    --file-description="控制系统实时分析工具" ^
-    --copyright="Copyright (c) 2025 ktkuri132" ^
-    --assume-yes-for-downloads ^
-    main.py
-
-echo.
-if exist "dist\ControlSystemTool.exe" (
-    echo [3/3] 编译成功！
-    echo 输出文件: dist\ControlSystemTool.exe
-) else (
-    echo [错误] 编译失败，请检查错误信息
-)
-
-echo.
 pause

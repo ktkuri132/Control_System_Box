@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(ControlSystemBox
-    VERSION 2.1.2
-    DESCRIPTION "控制系统实时分析工具 - C++ Qt6 版本"
+    VERSION 2.3.0
+    DESCRIPTION "控制系统实时分析工具 - C++ Qt6 版本（简化架构）"
     LANGUAGES CXX
 )
 
@@ -15,12 +15,13 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-# Windows 下隐藏控制台窗口
+# Windows 下显示控制台窗口用于调试
+# 如果要隐藏控制台，将 OFF 改为 ON
 if(WIN32)
-    set(CMAKE_WIN32_EXECUTABLE ON)
+    set(CMAKE_WIN32_EXECUTABLE OFF)
 endif()
 
-# 查找 Qt6
+# 查找 Qt6（移除 OpenGL 相关依赖）
 find_package(Qt6 REQUIRED COMPONENTS
     Widgets
     SerialPort
@@ -32,13 +33,19 @@ find_package(Qt6 REQUIRED COMPONENTS
 # 查找可选库
 find_package(FFTW3 QUIET)
 find_package(Eigen3 QUIET)
+find_package(Vulkan REQUIRED)
 
 # 如果没找到 Eigen，使用 header-only 模式
 if(NOT Eigen3_FOUND)
     message(STATUS "Eigen3 not found, will use bundled headers if available")
 endif()
 
-# 源文件
+# 手动 MOC 处理 HybridPlotWidget (必须在 find_package(Qt6) 之后)
+qt6_wrap_cpp(MOC_HYBRID
+    include/ui/plots/HybridPlotWidget.h
+)
+
+# 核心源文件（双进程架构：主进程渲染 + 计算进程）
 set(CORE_SOURCES
     src/core/SerialManager.cpp
     src/core/SimulatorReceiver.cpp
@@ -47,8 +54,10 @@ set(CORE_SOURCES
     src/core/SignalFilter.cpp
     src/core/PerformanceAnalyzer.cpp
     src/core/DataProcessor.cpp
+    src/core/ComputeWorker.cpp
 )
 
+# UI源文件（简化：移除FPSMonitor）
 set(UI_SOURCES
     src/ui/MainWindow.cpp
     src/ui/panels/SerialConfigPanel.cpp
@@ -66,10 +75,13 @@ set(UI_SOURCES
     src/ui/plots/RealtimePlotWidget.cpp
     src/ui/plots/FFTPlotWidget.cpp
     src/ui/plots/SimulatorPlotWidget.cpp
+    src/ui/plots/VulkanPlotWidget.cpp
+    src/ui/plots/HybridPlotWidget.cpp
     src/ui/windows/AnalysisWindow.cpp
     src/ui/windows/ExtendedAnalysisWindow.cpp
 )
 
+# 头文件（简化）
 set(HEADER_FILES
     include/core/SerialManager.h
     include/core/SimulatorReceiver.h
@@ -78,6 +90,8 @@ set(HEADER_FILES
     include/core/SignalFilter.h
     include/core/PerformanceAnalyzer.h
     include/core/DataProcessor.h
+    include/core/DebugLogger.h
+    include/core/ComputeWorker.h
     include/ui/MainWindow.h
     include/ui/panels/SerialConfigPanel.h
     include/ui/panels/SimulatorConfigPanel.h
@@ -94,6 +108,7 @@ set(HEADER_FILES
     include/ui/plots/RealtimePlotWidget.h
     include/ui/plots/FFTPlotWidget.h
     include/ui/plots/SimulatorPlotWidget.h
+    include/ui/plots/VulkanPlotWidget.h
     include/ui/windows/AnalysisWindow.h
     include/ui/windows/ExtendedAnalysisWindow.h
 )
@@ -112,6 +127,7 @@ add_executable(${PROJECT_NAME}
     ${UI_SOURCES}
     ${HEADER_FILES}
     ${QCUSTOMPLOT_SOURCES}
+    ${MOC_HYBRID}
     resources/resources.qrc
 )
 
@@ -119,15 +135,17 @@ add_executable(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/lib
+    ${Vulkan_INCLUDE_DIRS}
 )
 
-# 链接 Qt 库
+# 链接 Qt 库（移除 OpenGL 依赖）
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Widgets
     Qt6::SerialPort
     Qt6::Network
     Qt6::Concurrent
     Qt6::Charts
+    Vulkan::Vulkan
 )
 
 # 链接 FFTW3 (如果找到)

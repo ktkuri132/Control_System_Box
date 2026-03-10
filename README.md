@@ -1,145 +1,79 @@
-# C++ Qt6 重构项目 - 快速开始指南
+# Control System Box
 
-## 📁 项目结构
+控制系统实时分析工具（C++/Qt6）。
 
-```
-cpp/
-├── CMakeLists.txt              # CMake 构建配置
-├── include/                    # 头文件
-│   ├── core/                   # 核心模块
-│   │   ├── SerialManager.h     # 串口管理 ✅
-│   │   ├── SimulatorReceiver.h # UDP接收 ✅
-│   │   ├── DataBuffer.h        # 数据缓冲 ✅
-│   │   ├── UnifiedDataProtocol.h # 协议解析 ✅
-│   │   ├── SignalFilter.h      # 信号滤波 ✅
-│   │   ├── PerformanceAnalyzer.h # 性能分析 ✅
-│   │   └── DataProcessor.h     # 数据处理 ✅
-│   └── ui/                     # UI模块
-│       ├── MainWindow.h        # 主窗口 ✅
-│       ├── panels/             # 控制面板
-│       │   ├── UnifiedControlPanel.h ✅
-│       │   ├── SerialConfigPanel.h ✅
-│       │   ├── SimulatorConfigPanel.h ✅
-│       │   ├── PIDControlPanel.h ✅
-│       │   ├── SetpointPanel.h ✅
-│       │   ├── MetricsPanel.h ✅
-│       │   ├── DataControlPanel.h ✅
-│       │   └── FilterPanel.h ✅
-│       ├── widgets/            # 自定义控件
-│       │   ├── DialWithLabel.h ✅
-│       │   ├── SliderWithLabel.h ✅
-│       │   ├── MetricCard.h ✅
-│       │   └── StabilityGauge.h ✅
-│       ├── plots/              # 图表组件
-│       │   ├── RealtimePlotWidget.h ✅
-│       │   ├── FFTPlotWidget.h ✅
-│       │   └── SimulatorPlotWidget.h ✅
-│       └── windows/            # 弹出窗口
-│           ├── AnalysisWindow.h ✅
-│           └── ExtendedAnalysisWindow.h ✅
-├── src/                        # 源文件
-│   ├── main.cpp                # 程序入口 ✅ 完整实现
-│   ├── core/                   # 核心实现
-│   │   ├── SerialManager.cpp   # ✅ 完整实现
-│   │   ├── SimulatorReceiver.cpp # ✅ 完整实现
-│   │   ├── DataBuffer.cpp      # ✅ 完整实现
-│   │   ├── UnifiedDataProtocol.cpp # ✅ 完整实现
-│   │   ├── SignalFilter.cpp    # ⏳ 待实现
-│   │   ├── PerformanceAnalyzer.cpp # ⏳ 待实现
-│   │   └── DataProcessor.cpp   # ⏳ 待实现
-│   └── ui/                     # UI实现
-│       ├── MainWindow.cpp      # ✅ 完整实现
-│       ├── panels/*.cpp        # ⏳ 待实现
-│       ├── widgets/*.cpp       # ⏳ 待实现
-│       ├── plots/*.cpp         # ⏳ 待实现
-│       └── windows/*.cpp       # ⏳ 待实现
-├── resources/                  # 资源文件
-│   ├── resources.qrc           # Qt资源配置 ✅
-│   ├── images/                 # 图片资源 ✅
-│   └── styles/
-│       └── dark_theme.qss      # 暗色主题 ✅
-└── lib/                        # 第三方库 (待添加)
-    └── qcustomplot/            # 高性能图表库
+当前版本: `v2.3.0`
+
+## 功能概览
+
+- 串口与 UDP 双数据源接入
+- 多状态变量实时曲线显示
+- 混合渲染绘图（Qt + Vulkan）
+- 滤波、指标分析、频谱分析面板
+- 主进程渲染 + 计算进程架构（worker 子进程）
+
+## 项目结构
+
+```text
+Control_System_Box/
+├── CMakeLists.txt
+├── include/
+│   ├── core/
+│   └── ui/
+├── src/
+│   ├── core/
+│   └── ui/
+├── resources/
+└── cmake-build-debug/
 ```
 
-## 🚀 构建步骤
+## 构建与运行（Windows）
 
-### 1. 安装依赖
+依赖环境:
 
-#### Windows (推荐)
-1. 下载并安装 [Qt 6.6+](https://www.qt.io/download)
-   - 选择组件: Qt 6.x MSVC 2022 64-bit, Qt Charts, Qt Serial Port
-2. 安装 [CMake 3.16+](https://cmake.org/download/)
-3. 安装 Visual Studio 2022 (或 Build Tools)
+- Qt 6.10.2 (MSVC 2022 x64)
+- CMake >= 3.16
+- Visual Studio 2022 Build Tools
+- Vulkan SDK
 
-#### 可选依赖
-- **QCustomPlot**: 下载 https://www.qcustomplot.com/ 放入 `lib/qcustomplot/`
-- **FFTW3**: 用于高性能FFT计算
-- **Eigen**: 用于矩阵运算
+构建:
 
-### 2. 构建项目
-
-```bash
-cd cpp
-mkdir build && cd build
-
-# Windows (Visual Studio)
-cmake .. -G "Visual Studio 17 2022" -A x64
-cmake --build . --config Release
-
-# 或使用 Qt Creator 直接打开 CMakeLists.txt
+```powershell
+cmake -S . -B cmake-build-debug
+cmake --build cmake-build-debug --config Debug
 ```
 
-### 3. 运行
+运行:
 
-```bash
-./Release/ControlSystemBox.exe
+```powershell
+./cmake-build-debug/ControlSystemBox.exe
 ```
 
-## 📋 开发进度
+## 数据协议
 
-### ✅ 已完成 (框架)
-- [x] 项目目录结构
-- [x] CMake 构建系统
-- [x] 所有头文件定义
-- [x] 核心模块实现 (SerialManager, SimulatorReceiver, DataBuffer, UnifiedDataProtocol)
-- [x] 主窗口框架 (MainWindow)
-- [x] 资源文件 (图标、样式表)
+支持以下输入形式:
 
-### ⏳ 待实现
-- [ ] SignalFilter - 信号滤波算法
-- [ ] PerformanceAnalyzer - 性能指标计算
-- [ ] DataProcessor - 多线程数据处理
-- [ ] 所有UI面板实现
-- [ ] 所有自定义控件实现
-- [ ] 图表组件 (使用 Qt Charts 或 QCustomPlot)
-- [ ] 分析窗口实现
+- 串口文本协议（`#H` / `#D`）
+- UDP JSON 协议（`HANDSHAKE` / `DATA`）
+- UDP 兼容旧格式（嵌套 `state`/`target`/`control`）
 
-## 📝 开发建议
+默认 UDP 监听地址为 `0.0.0.0:5555`。
 
-1. **优先实现顺序**:
-   - 自定义控件 (DialWithLabel, SliderWithLabel)
-   - 控制面板 (SerialConfigPanel, PIDControlPanel)
-   - 图表组件 (RealtimePlotWidget) - 最关键
-   - 分析窗口
+## 版本变更
 
-2. **图表库选择**:
-   - **Qt Charts**: 易于使用，内置于Qt
-   - **QCustomPlot**: 性能更好，推荐用于实时数据
+### v2.3.0
 
-3. **测试策略**:
-   - 先用模拟数据测试UI
-   - 再接入真实串口/UDP测试
+- 统一并整理版本号
+- 优化 UDP 接收与旧协议兼容性
+- 改进图表批量更新，减少启动阶段曲线异常
+- 更新 README，移除过时的“待实现”说明
 
-## 📚 参考资料
+### v2.2.0
 
-- [Qt 6 文档](https://doc.qt.io/qt-6/)
-- [QCustomPlot 教程](https://www.qcustomplot.com/documentation/)
-- [原Python项目 ui_config.json](../ui_config.json) - UI配置参考
-- [重构方案](../REFACTORING_PLAN.md) - 详细设计文档
+- 双进程架构：主进程渲染 + 计算进程
+- 统一调试日志控制与输出节流
 
----
+## 说明
 
-**版本**: 2.1.2  
-**分支**: cpp-qt6-refactor  
-**创建日期**: 2026-01-31
+- `cmake-build-debug/` 为本地构建输出目录，不建议提交到版本库。
+- 若遇到链接错误 `LNK1168`，请先关闭正在运行的 `ControlSystemBox.exe`。
